@@ -1,5 +1,5 @@
 ##
-# rigol_grab: save Rigol Oscilloscope display as a .png file
+# rigol_grab: save Rigol Oscilloscope display as a .bmp file
 
 import argparse
 import os
@@ -11,16 +11,16 @@ import time
 
 class RigolGrab(object):
 
-    VID_PID = '0x1AB1::0x04CE'.lower()
+    VID_PID = '6833::1301' # MSO5074
 
     def __init__(self, verbose=False):
         self._verbose = verbose
         self._rigol = None
         self._resource_manager = pyvisa.ResourceManager()
 
-    def grab(self, filename='rigol.png', auto_view=True):
+    def grab(self, filename='rigol.bmp', auto_view=True):
         # self.rigol().write(':STOP')
-        buf = self.rigol().query_binary_values(':DISP:DATA? ON,0,PNG', datatype='B')
+        buf = self.rigol().query_binary_values(':DISP:DATA?', datatype='B')
         with open(filename, 'wb') as f:
             self.verbose_print('Capturing screen to', filename)
             f.write(bytearray(buf))
@@ -42,6 +42,7 @@ class RigolGrab(object):
             self.verbose_print('Opening', name)
             try:
                 self._rigol = self._resource_manager.open_resource(name, write_termination='\n', read_termination='\n')
+                time.sleep(3) # Wait until the USBTMC message disappears. 
             except:
                 self.err_out('Could not open oscilloscope')
         return self._rigol
@@ -74,7 +75,7 @@ class RigolGrab(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Rigol Screen Grabber')
-    parser.add_argument('-f', '--filename', default='rigol.png',
+    parser.add_argument('-f', '--filename', default='rigol.bmp',
                         help='name of output file')
     parser.add_argument('-a', '--auto_view', action='store_true',
                         help='automatically view output file')
